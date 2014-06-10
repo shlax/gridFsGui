@@ -8,11 +8,11 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import org.gfs.mongo.GfsFile
 import scala.collection.mutable
 
-class TabbedPane {
-  val tabbedPane = new JTabbedPane()
+class TabbedPane extends JTabbedPane{
+  assert(SwingUtilities.isEventDispatchThread)
 
   val menu = new JPopupMenu()
-  tabbedPane.setComponentPopupMenu(menu)
+  setComponentPopupMenu(menu)
 
   val closeItm = new JMenuItem("close")
   menu.add(closeItm)
@@ -29,14 +29,14 @@ class TabbedPane {
 
     if(replace == -1) {
       opened += Tab(f, ta)
-      tabbedPane.add(f.name, p)
-      tabbedPane.setSelectedIndex(opened.length-1)
+      add(f.name, p)
+      setSelectedIndex(opened.length-1)
     }else{
       opened(replace) = Tab(f, ta)
-      tabbedPane.remove(replace)
-      tabbedPane.add(p, replace)
-      tabbedPane.setTitleAt(replace, f.name)
-      tabbedPane.setSelectedIndex(replace)
+      remove(replace)
+      add(p, replace)
+      setTitleAt(replace, f.name)
+      setSelectedIndex(replace)
     }
 
     if(f.exist()) Command.job{
@@ -54,7 +54,7 @@ class TabbedPane {
   def saveTab(): TabbedPane = {
     assert(SwingUtilities.isEventDispatchThread)
 
-    val ind = tabbedPane.getSelectedIndex
+    val ind = getSelectedIndex
     if(ind == -1) return this
     val t = opened(ind)
     if(t.file.exist()){
@@ -71,10 +71,10 @@ class TabbedPane {
   }
 
   def close(): TabbedPane = {
-    val ind = tabbedPane.getSelectedIndex
+    val ind = getSelectedIndex
     if(ind == -1) return this
     opened.remove(ind)
-    tabbedPane.remove(ind)
+    remove(ind)
     this
   }
 

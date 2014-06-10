@@ -9,16 +9,15 @@ import java.text.SimpleDateFormat
 import org.gfs.{Command, autoGui}
 import java.io.FileOutputStream
 
-class Tree {
+class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
   assert(SwingUtilities.isEventDispatchThread)
 
-  val tree = new JTree(new DefaultTreeModel(new DefaultMutableTreeNode()))
-  tree.setRootVisible(false)
+  setRootVisible(false)
 
   var files: List[GfsFile] = Nil
 
   val menu = new JPopupMenu()
-  tree.setComponentPopupMenu(menu)
+  setComponentPopupMenu(menu)
 
   val deleteMi = new JMenuItem("delete")
   menu.add(deleteMi)
@@ -29,17 +28,17 @@ class Tree {
   def selected() = {
     assert(SwingUtilities.isEventDispatchThread)
 
-    val p = tree.getSelectionPath
+    val p = getSelectionPath
     if(p == null) None else p.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[FsFile].file
   }
 
   def model(m:(List[GfsFile], DefaultTreeModel)) = {
     assert(SwingUtilities.isEventDispatchThread)
 
-    val ep = tree.getExpandedDescendants(new TreePath(tree.getModel.getRoot))
+    val ep = getExpandedDescendants(new TreePath(getModel.getRoot))
     val toExpand = if(ep == null) Nil else ep.toList.map(_.getPath.toList.map(_.toString))
     files = m._1
-    tree.setModel(m._2)
+    setModel(m._2)
 
     def lookUp(n:DefaultMutableTreeNode, p:List[String]) : List[DefaultMutableTreeNode] = p match {
       case Nil => Nil
@@ -54,14 +53,14 @@ class Tree {
     val root = m._2.getRoot.asInstanceOf[DefaultMutableTreeNode]
     for(p <- toExpand if p.size > 1){
       val tp = lookUp(root, p.tail)
-      if(!tp.isEmpty) tree.expandPath(new TreePath((root :: tp).toArray[AnyRef]))
+      if(!tp.isEmpty) expandPath(new TreePath((root :: tp).toArray[AnyRef]))
     }
 
     this
   }
 
-  ToolTipManager.sharedInstance().registerComponent(tree)
-  tree.setCellRenderer(new DefaultTreeCellRenderer(){
+  ToolTipManager.sharedInstance().registerComponent(this)
+  setCellRenderer(new DefaultTreeCellRenderer(){
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     override def getTreeCellRendererComponent(tree: JTree, value: scala.Any, sel: Boolean, expanded: Boolean, leaf: Boolean, row: Int, hasFocus: Boolean) = {
       val f = value.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[FsFile]
@@ -97,7 +96,7 @@ class Tree {
 
   // actions
 
-  tree.addMouseListener(new MouseAdapter{
+  addMouseListener(new MouseAdapter{
     override def mouseClicked(e: MouseEvent){
       if(e.getClickCount == 2) Gui().openFile()
     }

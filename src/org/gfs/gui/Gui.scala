@@ -47,12 +47,12 @@ class Gui extends JFrame{
 
   val tree = new Tree()
 
-  left.add(new JScrollPane(tree.tree))
+  left.add(new JScrollPane(tree))
 
   sp.setLeftComponent(left)
 
   val tabbedPane = new TabbedPane()
-  sp.setRightComponent(tabbedPane.tabbedPane)
+  sp.setRightComponent(tabbedPane)
 
   setSize(800, 600)
   setLocationRelativeTo(null)
