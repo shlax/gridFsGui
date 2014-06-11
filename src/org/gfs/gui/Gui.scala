@@ -36,9 +36,22 @@ class Gui extends JFrame{
   val refreshBt = new JButton("refresh")
   bar.add(refreshBt)
 
+  val mainPane = new JPanel(new BorderLayout())
+  getContentPane.add(mainPane)
+
+  val queryPane = new JPanel(new BorderLayout())
+  mainPane.add(queryPane, BorderLayout.NORTH)
+
+  val queryTf = new JTextField()
+  queryPane.add(queryTf)
+
+  val runBt = new JButton("run")
+  queryPane.add(runBt, BorderLayout.EAST)
+
   val sp = new JSplitPane()
+  mainPane.add(sp)
+  sp.setOneTouchExpandable(true)
   sp.setDividerLocation(200)
-  getContentPane.add(sp)
 
   val left = new JPanel()
   left.setLayout(new BorderLayout())
@@ -67,11 +80,15 @@ class Gui extends JFrame{
     this
   }
 
+  var query : String = ""
+
   def refresh(after: List[GfsFile] => Unit = { m => }) = {
     assert(SwingUtilities.isEventDispatchThread)
 
     val fs = fsView.getSelectedItem.asInstanceOf[FsMode]
-    Command.job(FsViews.apply(MongoFs.list(), fs)).toGui{ l =>
+    val q = query
+
+    Command.job(FsViews.apply(MongoFs.list(q), fs)).toGui{ l =>
       tree.model(l)
       after(l._1)
     }.run()
@@ -101,4 +118,12 @@ class Gui extends JFrame{
 
   refreshBt.addActionListener(refresh())
   reconnectMi.addActionListener(reconnect())
+
+  val runAction = ${
+    query = queryTf.getText.trim
+    refresh()
+  }
+
+  runBt.addActionListener(runAction)
+  queryTf.addActionListener(runAction)
 }

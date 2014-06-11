@@ -77,7 +77,7 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
   def delete() = {
     assert(SwingUtilities.isEventDispatchThread)
 
-    selected().foreach(f => Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()))
+    selected().foreach(f => Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()).run())
     this
   }
 
@@ -88,7 +88,7 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
       val fch = new JFileChooser()
       if (fch.showSaveDialog(Gui()) == JFileChooser.APPROVE_OPTION) {
         val sf = fch.getSelectedFile
-        Command.job(MongoFs.load(f.name, new FileOutputStream(sf)))
+        Command.job(MongoFs.load(f.name, new FileOutputStream(sf))).run()
       }
     }
     this

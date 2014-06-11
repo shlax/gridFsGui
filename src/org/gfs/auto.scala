@@ -15,7 +15,7 @@ object auto {
 
 object autoGui{
 
-  implicit def ap[T](f: => T) = new ActionListener(){
+  implicit def $[T](f: => T) = new ActionListener(){
     override def actionPerformed(e: ActionEvent){ f }
   }
 

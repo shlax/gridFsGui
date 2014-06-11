@@ -5,8 +5,9 @@ import org.gfs.auto._
 import scala.collection.JavaConversions.asScalaIterator
 import java.util.Date
 import javax.swing.SwingUtilities
-import com.mongodb.{WriteConcern, MongoClient}
+import com.mongodb.{DBObject, BasicDBObject, WriteConcern, MongoClient}
 import com.mongodb.gridfs.GridFS
+import com.mongodb.util.JSON
 
 object ConnectionPull {
   val lock = new Object
@@ -44,10 +45,10 @@ case class GfsFile(name:String, length:Long, uploadDate:Date){
 
 object MongoFs {
 
-  def list() = {
+  def list(qs:String) = {
     assert(!SwingUtilities.isEventDispatchThread)
 
-    ConnectionPull.gridFs().getFileList.toList.map{ f =>
+    ConnectionPull.gridFs().getFileList(if(qs.isEmpty) new BasicDBObject() else JSON.parse(qs).asInstanceOf[DBObject]).toList.map{ f =>
       GfsFile(f.get("filename").asInstanceOf[String], f.get("length").asInstanceOf[Long], f.get("uploadDate").asInstanceOf[Date])
     }
   }

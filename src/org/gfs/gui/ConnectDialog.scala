@@ -70,7 +70,7 @@ class ConnectDialog extends JDialog(Gui()){
 
   import autoGui._
 
-  okButton.addActionListener(ap{
+  okButton.addActionListener(${
     ConnectionPull.connect(tfHost.getText, tfPort.getText.toInt, tfDb.getText, tfBucket.getText)
     Gui().refresh()
     doClose()
