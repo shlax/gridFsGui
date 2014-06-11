@@ -40,8 +40,8 @@ case object ExtList extends FsMode{
   override def toString = "ext/list"
 }
 
-class FsFile(val dir:String, val name:String, val file:Option[GfsFile] = None){
-  override def toString = dir++name
+class FsFile(val path:String, val file:Option[GfsFile] = None){
+  override def toString = path
 }
 
 object FsViews {
@@ -50,29 +50,26 @@ object FsViews {
     val childs = mutable.Map[String, Node]()
     val files = ListBuffer[GfsFile]()
 
-    def apply(nm:List[String]) : Node = nm match {
+    def apply(nm:List[String]): Node = nm match {
       case Nil => this
       case h :: t => childs.getOrElseUpdate(h, new Node(h)).apply(t)
     }
 
-    def add(f: GfsFile){ files += f }
-
     def node(parent:String) : DefaultMutableTreeNode = {
       if(childs.isEmpty){
         val n = new DefaultMutableTreeNode()
-        if(files.length == 1) n.setUserObject(new FsFile(parent, nm, Some(files.head)))
+        if(files.length == 1) n.setUserObject(new FsFile(parent+nm, Some(files.head)))
         else {
-          n.setUserObject(new FsFile(parent, nm))
-          for (f <- files) n.add(new DefaultMutableTreeNode(new FsFile(parent,nm, Some(f))))
+          n.setUserObject(new FsFile(parent+nm))
+          for (f <- files) n.add(new DefaultMutableTreeNode(new FsFile(parent+nm, Some(f))))
         }
         n
-      }else if(files.isEmpty && childs.size == 1 && !nm.isEmpty){ // not root
-        childs.head._2.node(parent+nm+"/")
-      }else{
+      }else if(files.isEmpty && childs.size == 1 && !nm.isEmpty) childs.head._2.node(parent+nm+"/")
+      else{
         val n = new DefaultMutableTreeNode()
-        n.setUserObject(new FsFile(parent, nm))
+        n.setUserObject(new FsFile(parent+nm))
         for(c <- childs.values) n.add(c.node(""))
-        for (f <- files) n.add(new DefaultMutableTreeNode(new FsFile(parent, nm, Some(f))))
+        for (f <- files) n.add(new DefaultMutableTreeNode(new FsFile(parent+nm, Some(f))))
         n
       }
     }
@@ -80,7 +77,7 @@ object FsViews {
 
   def apply(fs:List[GfsFile], fm: FsMode ) = {
     val r = new Node("")
-    for(f <- fs) r(fm(f)).add(f)
+    for(f <- fs) r(fm(f)).files += f
     (fs, new DefaultTreeModel(r.node("")))
   }
 

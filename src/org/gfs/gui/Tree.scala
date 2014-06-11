@@ -69,7 +69,7 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
           |${f.file.get.name}<br>
           |${f.file.get.length}<br>
           |${format.format(f.file.get.uploadDate)}
-        </body></html>""".stripMargin.trim) else setToolTipText(f.dir+f.name)
+        </body></html>""".stripMargin.trim) else setToolTipText(f.path)
       super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
     }
   })
