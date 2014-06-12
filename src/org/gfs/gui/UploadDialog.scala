@@ -1,10 +1,11 @@
 package org.gfs.gui
 
-import javax.swing._
 import java.awt.{BorderLayout, GridLayout}
-import org.gfs.{Command, autoGui}
-import org.gfs.mongo.MongoFs
 import java.io.FileInputStream
+import javax.swing._
+
+import org.gfs.Command
+import org.gfs.mongo.MongoFs
 
 object UploadDialog{
   def apply(basePath:String, replace:Boolean = false){
@@ -15,20 +16,20 @@ object UploadDialog{
 class UploadDialog(basePath:String, replace:Boolean = false) extends OkCancelDialog{
   assert(SwingUtilities.isEventDispatchThread)
 
-  import autoGui._
+  import org.gfs.autoGui._
 
-  val field = getContentPane.apply(new JPanel(new GridLayout(4, 1)), BorderLayout.NORTH)
+  val field = getContentPane += (new JPanel(new GridLayout(4, 1)), BorderLayout.NORTH)
   field.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5))
 
   field.add(new JLabel("from file:"))
 
-  val fromPanel = field(new JPanel(new BorderLayout()))
+  val fromPanel = field += new JPanel(new BorderLayout())
 
-  val tfFile = fromPanel(new JTextField(40))
-  val btOpen = fromPanel(new JButton("open"), BorderLayout.EAST).$(choose())
+  val tfFile = fromPanel += new JTextField(40)
+  val btOpen = fromPanel += (new JButton("open").call(choose()), BorderLayout.EAST)
 
   field.add(new JLabel("to gridFs:"))
-  val tfPath = field(new JTextField(20))
+  val tfPath = field += new JTextField(20)
 
   tfPath.setText(basePath+(if(replace) "" else "/"))
 

@@ -1,13 +1,15 @@
 package org.gfs.mongo
 
-import java.io.{OutputStream, InputStream}
-import org.gfs.auto._
-import scala.collection.JavaConversions.asScalaIterator
+import java.io.{InputStream, OutputStream}
 import java.util.Date
 import javax.swing.SwingUtilities
-import com.mongodb.{DBObject, BasicDBObject, WriteConcern, MongoClient}
+
 import com.mongodb.gridfs.GridFS
 import com.mongodb.util.JSON
+import com.mongodb.{BasicDBObject, DBObject, MongoClient, WriteConcern}
+import org.gfs.auto._
+
+import scala.collection.JavaConversions.asScalaIterator
 
 object ConnectionPull {
   val lock = new Object

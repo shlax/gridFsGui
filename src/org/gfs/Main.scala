@@ -1,8 +1,9 @@
 package org.gfs
 
-import javax.swing.{UIManager, SwingUtilities}
+import java.awt.event.{WindowAdapter, WindowEvent}
+import javax.swing.{SwingUtilities, UIManager}
+
 import org.gfs.gui.{ConnectDialog, Gui}
-import java.awt.event.{WindowEvent, WindowAdapter}
 
 // -Xdisable-assertions
 object Main extends App with Runnable{

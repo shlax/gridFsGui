@@ -1,8 +1,9 @@
 package org.gfs.gui
 
-import javax.swing._
 import java.awt.BorderLayout
-import org.gfs.{XAction, Command, autoGui}
+import javax.swing._
+
+import org.gfs.Command
 import org.gfs.mongo.{GfsFile, MongoFs}
 
 object Gui{
@@ -14,47 +15,47 @@ class Gui extends JFrame{
   assert(SwingUtilities.isEventDispatchThread)
   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
 
-  import autoGui._
+  import org.gfs.autoGui._
 
   val menu = new JMenuBar()
   setJMenuBar(menu)
 
-  val dbMn = menu(new JMenu("DB"))
+  val dbMn = menu += new JMenu("DB")
 
-  val reconnectMi = dbMn(new JMenuItem("reconnect")).$(reconnect())
+  val reconnectMi = dbMn += new JMenuItem("reconnect").call(reconnect())
 
-  val bar = getContentPane.apply(new JToolBar(), BorderLayout.NORTH)
+  val bar = getContentPane += (new JToolBar(), BorderLayout.NORTH)
   bar.setFloatable(false)
 
-  val mainPane = getContentPane.apply(new JPanel(new BorderLayout()))
+  val mainPane = getContentPane += new JPanel(new BorderLayout())
 
-  val sp = mainPane(new JSplitPane())
+  val sp = mainPane += new JSplitPane()
   sp.setOneTouchExpandable(true)
   sp.setDividerLocation(200)
 
   val left = new JPanel(new BorderLayout())
   sp.setLeftComponent(left)
 
-  val fsView = left(new JComboBox(FsMode.modes), BorderLayout.NORTH)
-  fsView.addActionListener(XAction(reload()))
+  val fsView = left += (new JComboBox(FsMode.modes), BorderLayout.NORTH)
+  fsView.addActionListener(reload())
 
   val tree = left.scroll(new Tree())
 
   val tabbedPane = new TabbedPane()
   sp.setRightComponent(tabbedPane)
 
-  val newBt = bar(new JButton("new")).$(tabbedPane.newTab())
-  val saveBt = bar(new JButton("save")).$(tabbedPane.saveTab())
-  val uploadBt = bar(new JButton("upload")).$(upload())
+  val newBt = bar += new JButton("new").call(tabbedPane.newTab())
+  val saveBt = bar += new JButton("save").call(tabbedPane.saveTab())
+  val uploadBt = bar += new JButton("upload").call(upload())
 
-  val refreshBt = bar(new JButton("refresh")).$(refresh())
+  val refreshBt = bar += new JButton("refresh").call(refresh())
 
-  val queryPane = mainPane(new JPanel(new BorderLayout()), BorderLayout.NORTH)
+  val queryPane = mainPane += (new JPanel(new BorderLayout()), BorderLayout.NORTH)
 
-  val queryTf = queryPane(new JTextField())
-  queryTf.addActionListener(XAction(runAction()))
+  val queryTf = queryPane += new JTextField()
+  queryTf.addActionListener(runAction())
 
-  val runBt = queryPane(new JButton("run"), BorderLayout.EAST).$(runAction())
+  val runBt = queryPane += (new JButton("run").call(runAction()), BorderLayout.EAST)
 
   setSize(800, 600)
   setLocationRelativeTo(null)

@@ -1,7 +1,9 @@
 package org.gfs.gui
 
+import javax.swing.tree.{DefaultMutableTreeNode, DefaultTreeModel}
+
 import org.gfs.mongo.GfsFile
-import javax.swing.tree.{DefaultTreeModel, DefaultMutableTreeNode}
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 

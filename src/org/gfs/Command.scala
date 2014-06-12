@@ -1,9 +1,10 @@
 package org.gfs
 
-import scala.language.implicitConversions
-import scala.concurrent.{ExecutionContextExecutor, ExecutionContext}
 import java.util.concurrent.Executor
 import javax.swing.SwingUtilities
+
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.language.implicitConversions
 
 object Command{
   implicit def asRun[F](f: => F) = new Runnable(){ def run() { f } }
@@ -35,7 +36,7 @@ trait Command[T] extends Runnable{
 
 trait CommandGui[T] extends Command[T]{
   override def execute(t: Task[T, _], v:T){
-    import Command._
+    import org.gfs.Command._
     t match {
       case g: GuiTask[T, _] => g.complete(v)
       case j: JobTask[T, _] => Gfs.implicits.ec.execute(j.complete(v))
@@ -45,7 +46,7 @@ trait CommandGui[T] extends Command[T]{
 
 trait CommandJob[T] extends Command[T]{
   override def execute(t: Task[T, _], v:T){
-    import Command._
+    import org.gfs.Command._
     t match {
       case g: GuiTask[T, _] => Command.ecGui.execute(g.complete(v))
       case j: JobTask[T, _] => j.complete(v)
@@ -55,7 +56,7 @@ trait CommandJob[T] extends Command[T]{
 
 abstract class BaseCommand[T](f: => T, ec:ExecutionContextExecutor) extends Command[T]{
   override def run() {
-    import Command._
+    import org.gfs.Command._
     ec.execute(asRun{
       val v = f
       next.foreach(execute(_, v))
@@ -78,46 +79,3 @@ abstract class Task[A, B](c: Command[_], f: A => B) extends Command[B]{
 
 class GuiTask[A, B](c: Command[_], f: A => B) extends Task[A, B](c, f) with CommandGui[B]
 class JobTask[A, B](c: Command[_], f: A => B) extends Task[A, B](c, f) with CommandJob[B]
-
-/*
-object SwTest extends App{
-
-  def g1() = {
-    println("2"+Thread.currentThread().getName)
-    4
-  }
-
-  def j1(i:Int) = {
-    println("3"+Thread.currentThread().getName)
-    println(i)
-    7
-  }
-
-  def g2(a:Int) = {
-    println(a+"/"+Thread.currentThread().getName)
-    (j:Int) => {
-      println("4"+Thread.currentThread().getName+""+j)
-      5
-    }
-  }
-
-  println("1"+Thread.currentThread().getName)
-
-  Command.gui(g1()).job(j1).gui(g2(9)).job{ i =>
-    println("5"+Thread.currentThread().getName)
-    println(i)
-  }.run()
-
-  Command.job{
-    println("-3"+Thread.currentThread().getName)
-    7
-  }.gui{ j =>
-    println("-4"+Thread.currentThread().getName+""+j)
-    5
-  }.gui{ j =>
-    println("-5"+Thread.currentThread().getName+""+j)
-    5
-  }.run()
-
-}
- */

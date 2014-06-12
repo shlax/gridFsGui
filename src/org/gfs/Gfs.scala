@@ -1,7 +1,8 @@
 package org.gfs
 
-import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
+
+import scala.concurrent.ExecutionContext
 
 object Gfs {
 

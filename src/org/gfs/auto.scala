@@ -1,9 +1,10 @@
 package org.gfs
 
-import scala.language.implicitConversions
 import java.awt.event.{ActionEvent, ActionListener}
-import java.awt.{Container, Component}
+import java.awt.{Component, Container}
 import javax.swing._
+
+import scala.language.implicitConversions
 
 object auto {
 
@@ -15,33 +16,29 @@ object auto {
   }
 }
 
-object XAction{
-  def apply(f : => Unit) = new XAction(f)
-}
-
-class XAction(f : => Unit) extends ActionListener{
+class UnitAction[T](f : => T) extends ActionListener{
   override def actionPerformed(e: ActionEvent){ f }
 }
 
 object autoGui{
 
   implicit class autoActionListener[T <: AbstractButton](b: T){
-    def $(f : => Unit) = {
-      b.addActionListener(XAction(f))
+    def call(f : => Unit) = {
+      b.addActionListener(unitAction(f))
       b
     }
     def event(f : => Unit) = {
-      b.addActionListener(XAction(f))
+      b.addActionListener(unitAction(f))
       b
     }
   }
 
   implicit class autoComponent(p:Container){
-    def apply[T <: Component](c: T) = {
+    def += [T <: Component](c: T) = {
       p.add(c)
       c
     }
-    def apply[T <: Component](c:T, const:Any) = {
+    def += [T <: Component](c:T, const:Any) = {
       p.add(c, const)
       c
     }
@@ -54,5 +51,7 @@ object autoGui{
       c
     }
   }
+
+  implicit def unitAction[T](f: => T)= new UnitAction(f)
 
 }

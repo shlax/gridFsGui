@@ -1,11 +1,12 @@
 package org.gfs.gui
 
-import org.gfs.mongo.MongoFs
-import javax.swing._
 import java.awt.BorderLayout
-import org.gfs.{autoGui, Command}
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import org.gfs.mongo.GfsFile
+import javax.swing._
+
+import org.gfs.Command
+import org.gfs.mongo.{GfsFile, MongoFs}
+
 import scala.collection.mutable
 
 class TabbedPane extends JTabbedPane{
@@ -14,9 +15,9 @@ class TabbedPane extends JTabbedPane{
   val menu = new JPopupMenu()
   setComponentPopupMenu(menu)
 
-  import autoGui._
+  import org.gfs.autoGui._
 
-  val closeItm = menu(new JMenuItem("close")).$(close())
+  val closeItm = menu += new JMenuItem("close").call(close())
 
   case class Tab(file:GfsFile, cmp:JTextArea)
   val opened  = mutable.ListBuffer[Tab]()
