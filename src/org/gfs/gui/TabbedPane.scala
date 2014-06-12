@@ -14,13 +14,14 @@ class TabbedPane extends JTabbedPane{
   val menu = new JPopupMenu()
   setComponentPopupMenu(menu)
 
-  val closeItm = new JMenuItem("close")
-  menu.add(closeItm)
+  import autoGui._
+
+  val closeItm = menu(new JMenuItem("close")).$(close())
 
   case class Tab(file:GfsFile, cmp:JTextArea)
   val opened  = mutable.ListBuffer[Tab]()
 
-  def apply(f:GfsFile, replace:Int = -1) = {
+  def apply(f:GfsFile, replace:Int = -1){
     assert(SwingUtilities.isEventDispatchThread)
 
     val p = new JPanel(new BorderLayout())
@@ -46,16 +47,17 @@ class TabbedPane extends JTabbedPane{
     }.toGui{ out =>
       ta.setText(new String(out.toByteArray, "UTF-8"))
     }.run()
-    this
   }
 
-  def newTab() = apply(GfsFile("*new"))
+  def newTab(){
+    apply(GfsFile("*new"))
+  }
 
-  def saveTab(): TabbedPane = {
+  def saveTab(){
     assert(SwingUtilities.isEventDispatchThread)
 
     val ind = getSelectedIndex
-    if(ind == -1) return this
+    if(ind == -1) return
     val t = opened(ind)
     if(t.file.exist()){
       val nm = t.file.name
@@ -63,22 +65,17 @@ class TabbedPane extends JTabbedPane{
       Command.job(MongoFs.replace(nm, in)).run()
     } else{
       val nm = JOptionPane.showInputDialog("file name")
-      if(nm == null || nm.isEmpty) return this
+      if(nm == null || nm.isEmpty) return
       val in = new ByteArrayInputStream(t.cmp.getText.getBytes("UTF-8"))
       Command.job(MongoFs.put(nm, in)).gui(Gui().refresh(_.find(_.name == nm).foreach(apply(_, ind)))).run()
     }
-    this
   }
 
-  def close(): TabbedPane = {
+  def close(){
     val ind = getSelectedIndex
-    if(ind == -1) return this
+    if(ind == -1) return
     opened.remove(ind)
     remove(ind)
-    this
   }
 
-  import autoGui._
-
-  closeItm.addActionListener(close())
 }

@@ -15,6 +15,6 @@ object Main extends App with Runnable{
       override def windowClosed(e: WindowEvent){ Gfs.pull.shutdown() }
     })
     f.setVisible(true)
-    new ConnectDialog().setVisible(true)
+    ConnectDialog()
   }
 }

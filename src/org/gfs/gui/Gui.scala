@@ -2,7 +2,7 @@ package org.gfs.gui
 
 import javax.swing._
 import java.awt.BorderLayout
-import org.gfs.{Command, autoGui}
+import org.gfs.{XAction, Command, autoGui}
 import org.gfs.mongo.{GfsFile, MongoFs}
 
 object Gui{
@@ -14,70 +14,58 @@ class Gui extends JFrame{
   assert(SwingUtilities.isEventDispatchThread)
   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
 
+  import autoGui._
+
   val menu = new JMenuBar()
   setJMenuBar(menu)
 
-  val dbMn = new JMenu("DB")
-  menu.add(dbMn)
+  val dbMn = menu(new JMenu("DB"))
 
-  val reconnectMi = new JMenuItem("reconnect")
-  dbMn.add(reconnectMi)
+  val reconnectMi = dbMn(new JMenuItem("reconnect")).$(reconnect())
 
-  val bar = new JToolBar()
+  val bar = getContentPane.apply(new JToolBar(), BorderLayout.NORTH)
   bar.setFloatable(false)
-  getContentPane.add(bar, BorderLayout.NORTH)
 
-  val newBt = new JButton("new")
-  bar.add(newBt)
+  val mainPane = getContentPane.apply(new JPanel(new BorderLayout()))
 
-  val saveBt = new JButton("save")
-  bar.add(saveBt)
-
-  val refreshBt = new JButton("refresh")
-  bar.add(refreshBt)
-
-  val mainPane = new JPanel(new BorderLayout())
-  getContentPane.add(mainPane)
-
-  val queryPane = new JPanel(new BorderLayout())
-  mainPane.add(queryPane, BorderLayout.NORTH)
-
-  val queryTf = new JTextField()
-  queryPane.add(queryTf)
-
-  val runBt = new JButton("run")
-  queryPane.add(runBt, BorderLayout.EAST)
-
-  val sp = new JSplitPane()
-  mainPane.add(sp)
+  val sp = mainPane(new JSplitPane())
   sp.setOneTouchExpandable(true)
   sp.setDividerLocation(200)
 
-  val left = new JPanel()
-  left.setLayout(new BorderLayout())
-  val fsView = new JComboBox(FsMode.modes)
-  left.add(fsView, BorderLayout.NORTH)
-
-  val tree = new Tree()
-
-  left.add(new JScrollPane(tree))
-
+  val left = new JPanel(new BorderLayout())
   sp.setLeftComponent(left)
+
+  val fsView = left(new JComboBox(FsMode.modes), BorderLayout.NORTH)
+  fsView.addActionListener(XAction(reload()))
+
+  val tree = left.scroll(new Tree())
 
   val tabbedPane = new TabbedPane()
   sp.setRightComponent(tabbedPane)
 
+  val newBt = bar(new JButton("new")).$(tabbedPane.newTab())
+  val saveBt = bar(new JButton("save")).$(tabbedPane.saveTab())
+  val uploadBt = bar(new JButton("upload")).$(upload())
+
+  val refreshBt = bar(new JButton("refresh")).$(refresh())
+
+  val queryPane = mainPane(new JPanel(new BorderLayout()), BorderLayout.NORTH)
+
+  val queryTf = queryPane(new JTextField())
+  queryTf.addActionListener(XAction(runAction()))
+
+  val runBt = queryPane(new JButton("run"), BorderLayout.EAST).$(runAction())
+
   setSize(800, 600)
   setLocationRelativeTo(null)
 
-  def reload() = {
+  def reload(){
     assert(SwingUtilities.isEventDispatchThread)
 
     val fs = fsView.getSelectedItem.asInstanceOf[FsMode]
     val l = tree.files
 
     Command.job(FsViews.apply(l, fs)).toGui(Gui().tree.model).run()
-    this
   }
 
   var query : String = ""
@@ -95,35 +83,26 @@ class Gui extends JFrame{
     this
   }
 
-  def openFile() = {
+  def openFile(){
     assert(SwingUtilities.isEventDispatchThread)
 
-    tree.selected().foreach(Gui().tabbedPane(_))
-    this
+    tree.selectedFile().foreach(Gui().tabbedPane(_))
   }
 
-  def reconnect() = {
+  def reconnect(){
     assert(SwingUtilities.isEventDispatchThread)
 
-    new ConnectDialog().setVisible(true)
-    this
+    ConnectDialog()
   }
 
-  import autoGui._
+  def upload(){
+    assert(SwingUtilities.isEventDispatchThread)
 
-  fsView.addActionListener(reload())
+    UploadDialog(tree.selectedPath().filter(_.file.isEmpty).map(_.path).mkString("/"))
+  }
 
-  newBt.addActionListener(tabbedPane.newTab())
-  saveBt.addActionListener(tabbedPane.saveTab())
-
-  refreshBt.addActionListener(refresh())
-  reconnectMi.addActionListener(reconnect())
-
-  val runAction = ${
+  def runAction(){
     query = queryTf.getText.trim
     refresh()
   }
-
-  runBt.addActionListener(runAction)
-  queryTf.addActionListener(runAction)
 }

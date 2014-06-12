@@ -1,5 +1,6 @@
 package org.gfs.gui
 
+import scala.language.implicitConversions
 import scala.collection.JavaConversions.enumerationAsScalaIterator
 import javax.swing._
 import javax.swing.tree.{TreePath, DefaultTreeCellRenderer, DefaultMutableTreeNode, DefaultTreeModel}
@@ -19,20 +20,29 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
   val menu = new JPopupMenu()
   setComponentPopupMenu(menu)
 
-  val deleteMi = new JMenuItem("delete")
-  menu.add(deleteMi)
+  import autoGui._
 
-  val downloadMi = new JMenuItem("download")
-  menu.add(downloadMi)
+  val deleteMi = menu(new JMenuItem("delete")).$(delete())
+  val downloadMi = menu(new JMenuItem("download")).$(download())
+  val uploadMi = menu(new JMenuItem("upload")).$(upload())
 
-  def selected() = {
+  implicit def toFs(a:Any) = a.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[FsFile]
+
+  def selectedPath() = {
     assert(SwingUtilities.isEventDispatchThread)
 
     val p = getSelectionPath
-    if(p == null) None else p.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[FsFile].file
+    if(p == null) Nil else p.getPath.toList.tail.map(toFs)
   }
 
-  def model(m:(List[GfsFile], DefaultTreeModel)) = {
+  def selectedFile() = {
+    assert(SwingUtilities.isEventDispatchThread)
+
+    val p = getSelectionPath
+    if(p == null) None else p.getLastPathComponent.file
+  }
+
+  def model(m:(List[GfsFile], DefaultTreeModel)){
     assert(SwingUtilities.isEventDispatchThread)
 
     val ep = getExpandedDescendants(new TreePath(getModel.getRoot))
@@ -55,8 +65,6 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
       val tp = lookUp(root, p.tail)
       if(!tp.isEmpty) expandPath(new TreePath((root :: tp).toArray[AnyRef]))
     }
-
-    this
   }
 
   ToolTipManager.sharedInstance().registerComponent(this)
@@ -74,27 +82,29 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
     }
   })
 
-  def delete() = {
+  def delete(){
     assert(SwingUtilities.isEventDispatchThread)
 
-    selected().foreach(f => Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()).run())
-    this
+    selectedFile().foreach(f => Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()).run())
   }
 
-  def download() = {
+  def download(){
     assert(SwingUtilities.isEventDispatchThread)
 
-    selected().foreach{ f =>
+    selectedFile().foreach{ f =>
       val fch = new JFileChooser()
       if (fch.showSaveDialog(Gui()) == JFileChooser.APPROVE_OPTION) {
         val sf = fch.getSelectedFile
         Command.job(MongoFs.load(f.name, new FileOutputStream(sf))).run()
       }
     }
-    this
   }
 
-  // actions
+  def upload(){
+    assert(SwingUtilities.isEventDispatchThread)
+
+    selectedFile().foreach(f => UploadDialog(f.name, true))
+  }
 
   addMouseListener(new MouseAdapter{
     override def mouseClicked(e: MouseEvent){
@@ -102,8 +112,4 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
     }
   })
 
-  import autoGui._
-
-  deleteMi.addActionListener(delete())
-  downloadMi.addActionListener(download())
 }
