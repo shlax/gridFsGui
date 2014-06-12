@@ -23,11 +23,7 @@ class UnitAction[T](f : => T) extends ActionListener{
 object autoGui{
 
   implicit class autoActionListener[T <: AbstractButton](b: T){
-    def call(f : => Unit) = {
-      b.addActionListener(unitAction(f))
-      b
-    }
-    def event(f : => Unit) = {
+    def call[Q](f : => Q) = {
       b.addActionListener(unitAction(f))
       b
     }
