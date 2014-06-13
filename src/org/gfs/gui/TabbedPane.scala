@@ -29,8 +29,8 @@ class TabbedPane extends JTabbedPane{
     val title = if(ind == -1) f.name else f.name.substring(ind+1)
 
     val p = new JPanel(new BorderLayout())
-    val ta = new JTextArea()
-    p.add(new JScrollPane(ta))
+    val ta = p.scroll(new JTextArea())
+    ta.setTabSize(1)
 
     if(replace == -1) {
       opened += Tab(f, ta)
