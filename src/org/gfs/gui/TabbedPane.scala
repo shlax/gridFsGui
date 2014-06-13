@@ -25,19 +25,22 @@ class TabbedPane extends JTabbedPane{
   def apply(f:GfsFile, replace:Int = -1){
     assert(SwingUtilities.isEventDispatchThread)
 
+    val ind = f.name.lastIndexOf("/")
+    val title = if(ind == -1) f.name else f.name.substring(ind+1)
+
     val p = new JPanel(new BorderLayout())
     val ta = new JTextArea()
     p.add(new JScrollPane(ta))
 
     if(replace == -1) {
       opened += Tab(f, ta)
-      add(f.name, p)
+      add(title, p)
       setSelectedIndex(opened.length-1)
     }else{
       opened(replace) = Tab(f, ta)
       remove(replace)
       add(p, replace)
-      setTitleAt(replace, f.name)
+      setTitleAt(replace, title)
       setSelectedIndex(replace)
     }
 

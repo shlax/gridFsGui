@@ -42,7 +42,7 @@ class UploadDialog(basePath:String, replace:Boolean = false) extends OkCancelDia
     Command.job{
       if(replace) MongoFs.delete(to)
       MongoFs.put(to, new FileInputStream(from))
-    }
+    }.gui(Gui().refresh()).run()
   }
 
   def choose(){

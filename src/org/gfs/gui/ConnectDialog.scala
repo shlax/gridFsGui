@@ -38,7 +38,7 @@ class ConnectDialog extends OkCancelDialog{
   // ConnectionPull.connect("denoviusapp1.hq.gratex.com", 40000, "test-test", "")
   tfHost.setText("denoviusapp1.hq.gratex.com")
   tfPort.setText("40000")
-  tfDb.setText("test-test")
+  tfDb.setText("denovius-gkoslamt-test")
   tfBucket.setText("")
 
   override def ok(){
