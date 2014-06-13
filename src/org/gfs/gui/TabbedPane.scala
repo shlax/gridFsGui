@@ -45,7 +45,7 @@ class TabbedPane extends JTabbedPane{
       override def actionPerformed(e: ActionEvent){ if(undo.canUndo) undo.undo() }
     }
     val redoAct = new AbstractAction("redo"){
-      override def actionPerformed(e: ActionEvent){ if(undo.canRedo) undo.redo()}
+      override def actionPerformed(e: ActionEvent){ if(undo.canRedo) undo.redo() }
     }
 
     val ctrlS = KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK)
