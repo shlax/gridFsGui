@@ -5,14 +5,6 @@ import org.gfs.mongo.ConnectionPull
 
 object Api {
 
-  def newTab(){
-    Command.gui(Gui().tabbedPane.newTab()).run()
-  }
-
-  def closeTab(){
-    Command.gui(Gui().tabbedPane.closeTab()).run()
-  }
-
   def refresh(){
     Command.gui(Gui().refresh()).run()
   }

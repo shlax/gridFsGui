@@ -74,7 +74,6 @@ class Gui extends JFrame{
 
   def refresh(after: List[GfsFile] => Unit = { m => }) = {
     assert(SwingUtilities.isEventDispatchThread)
-    println("org.gfs.Api.refresh()")
 
     val fs = fsView.getSelectedItem.asInstanceOf[FsMode]
     val q = query

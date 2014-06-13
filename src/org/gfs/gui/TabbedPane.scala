@@ -89,7 +89,6 @@ class TabbedPane extends JTabbedPane{
 
   def newTab(){
     assert(SwingUtilities.isEventDispatchThread)
-    println("org.gfs.Api.newTab()")
 
     apply(GfsFile("*new"))
   }
@@ -114,7 +113,6 @@ class TabbedPane extends JTabbedPane{
 
   def closeTab(){
     assert(SwingUtilities.isEventDispatchThread)
-    println("org.gfs.Api.closeTab()")
 
     val ind = getSelectedIndex
     if(ind == -1) return
