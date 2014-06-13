@@ -8,6 +8,9 @@ import org.gfs.Command
 import org.gfs.mongo.{GfsFile, MongoFs}
 
 import scala.collection.mutable
+import javax.swing.text.JTextComponent
+import java.awt.event.{ActionEvent, InputEvent, KeyEvent}
+import javax.swing.undo.UndoManager
 
 class TabbedPane extends JTabbedPane{
   assert(SwingUtilities.isEventDispatchThread)
@@ -31,6 +34,38 @@ class TabbedPane extends JTabbedPane{
     val p = new JPanel(new BorderLayout())
     val ta = p.scroll(new JTextArea())
     ta.setTabSize(1)
+
+    val undo = new UndoManager()
+    ta.getDocument.addUndoableEditListener(undo)
+
+    val saveAct = new AbstractAction("save"){
+      override def actionPerformed(e: ActionEvent){ saveTab() }
+    }
+    val undoAct = new AbstractAction("undo"){
+      override def actionPerformed(e: ActionEvent){ if(undo.canUndo) undo.undo() }
+    }
+    val redoAct = new AbstractAction("redo"){
+      override def actionPerformed(e: ActionEvent){ if(undo.canRedo) undo.redo()}
+    }
+
+    val ctrlS = KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK)
+    val ctrlZ = KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK)
+    val ctrlY = KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK)
+
+    val km = JTextComponent.addKeymap("tabbedPaneEditor", ta.getKeymap)
+
+    km.addActionForKeyStroke(ctrlS, saveAct)
+    km.addActionForKeyStroke(ctrlZ, undoAct)
+    km.addActionForKeyStroke(ctrlY, redoAct)
+
+    ta.setKeymap(km)
+
+    val pop = new JPopupMenu()
+    ta.setComponentPopupMenu(pop)
+
+    (pop += new JMenuItem(saveAct)).setAccelerator(ctrlS)
+    (pop += new JMenuItem(undoAct)).setAccelerator(ctrlZ)
+    (pop += new JMenuItem(redoAct)).setAccelerator(ctrlY)
 
     if(replace == -1) {
       opened += Tab(f, ta)
