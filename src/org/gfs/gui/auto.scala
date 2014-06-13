@@ -1,20 +1,10 @@
-package org.gfs
+package org.gfs.gui
 
 import java.awt.event.{ActionEvent, ActionListener}
 import java.awt.{Component, Container}
-import javax.swing._
+import javax.swing.{AbstractButton, JScrollPane}
 
 import scala.language.implicitConversions
-
-object auto {
-
-  implicit class AutoClose[A <: AutoCloseable](c:A){
-    def autoClose[B](f : A => B ) = {
-      try{ f(c)
-      }finally { c.close() }
-    }
-  }
-}
 
 class UnitAction[T](f : => T) extends ActionListener{
   override def actionPerformed(e: ActionEvent){ f }

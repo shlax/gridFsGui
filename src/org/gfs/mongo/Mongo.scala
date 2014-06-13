@@ -7,7 +7,7 @@ import javax.swing.SwingUtilities
 import com.mongodb.gridfs.GridFS
 import com.mongodb.util.JSON
 import com.mongodb.{BasicDBObject, DBObject, MongoClient, WriteConcern}
-import org.gfs.auto._
+import org.gfs.mongo.auto._
 
 import scala.collection.JavaConversions.asScalaIterator
 
@@ -32,6 +32,12 @@ object ConnectionPull {
     val db = pull.get.getDB(dbNm.get)
     db.setWriteConcern(WriteConcern.REPLICAS_SAFE)
     if (dbBucket.isEmpty) new GridFS(db) else new GridFS(db, dbBucket.get)
+  }
+
+  def close(){
+    lock.synchronized {
+      pull.foreach(_.close())
+    }
   }
 
 }

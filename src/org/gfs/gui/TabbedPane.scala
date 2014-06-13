@@ -1,16 +1,15 @@
 package org.gfs.gui
 
 import java.awt.BorderLayout
+import java.awt.event.{ActionEvent, InputEvent, KeyEvent}
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import javax.swing._
+import javax.swing.text.JTextComponent
+import javax.swing.undo.UndoManager
 
-import org.gfs.Command
 import org.gfs.mongo.{GfsFile, MongoFs}
 
 import scala.collection.mutable
-import javax.swing.text.JTextComponent
-import java.awt.event.{ActionEvent, InputEvent, KeyEvent}
-import javax.swing.undo.UndoManager
 
 class TabbedPane extends JTabbedPane{
   assert(SwingUtilities.isEventDispatchThread)
@@ -18,9 +17,9 @@ class TabbedPane extends JTabbedPane{
   val menu = new JPopupMenu()
   setComponentPopupMenu(menu)
 
-  import org.gfs.autoGui._
+  import org.gfs.gui.autoGui._
 
-  val closeItm = menu += new JMenuItem("close").call(close())
+  val closeItm = menu += new JMenuItem("close").call(closeTab())
 
   case class Tab(file:GfsFile, cmp:JTextArea)
   val opened  = mutable.ListBuffer[Tab]()
@@ -38,13 +37,13 @@ class TabbedPane extends JTabbedPane{
     val undo = new UndoManager()
     ta.getDocument.addUndoableEditListener(undo)
 
-    val saveAct = new AbstractAction("save"){
+    val saveAct = new AbstractAction("Save"){
       override def actionPerformed(e: ActionEvent){ saveTab() }
     }
-    val undoAct = new AbstractAction("undo"){
+    val undoAct = new AbstractAction("Undo"){
       override def actionPerformed(e: ActionEvent){ if(undo.canUndo) undo.undo() }
     }
-    val redoAct = new AbstractAction("redo"){
+    val redoAct = new AbstractAction("Redo"){
       override def actionPerformed(e: ActionEvent){ if(undo.canRedo) undo.redo() }
     }
 
@@ -89,6 +88,9 @@ class TabbedPane extends JTabbedPane{
   }
 
   def newTab(){
+    assert(SwingUtilities.isEventDispatchThread)
+    println("org.gfs.Api.newTab()")
+
     apply(GfsFile("*new"))
   }
 
@@ -110,7 +112,10 @@ class TabbedPane extends JTabbedPane{
     }
   }
 
-  def close(){
+  def closeTab(){
+    assert(SwingUtilities.isEventDispatchThread)
+    println("org.gfs.Api.closeTab()")
+
     val ind = getSelectedIndex
     if(ind == -1) return
     opened.remove(ind)

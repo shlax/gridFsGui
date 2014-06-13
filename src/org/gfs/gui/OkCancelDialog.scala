@@ -9,7 +9,7 @@ abstract class OkCancelDialog extends JDialog(Gui()){
   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
   setModal(true)
 
-  import org.gfs.autoGui._
+  import org.gfs.gui.autoGui._
 
   val buttons = getContentPane += (new JPanel(new FlowLayout(FlowLayout.RIGHT)), BorderLayout.SOUTH)
 

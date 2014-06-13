@@ -1,17 +1,23 @@
-package org.gfs
+package org.gfs.gui
 
-import java.util.concurrent.Executor
+import java.util.concurrent.{Executor, Executors}
 import javax.swing.SwingUtilities
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.language.implicitConversions
 
 object Command{
-  implicit def asRun[F](f: => F) = new Runnable(){ def run() { f } }
+
+  object implicits{
+    implicit def asRun[F](f: => F) = new Runnable(){ def run() { f } }
+  }
 
   val ecGui = ExecutionContext.fromExecutor(new Executor(){
     override def execute(command: Runnable){ SwingUtilities.invokeLater(command) }
   })
+
+  val pull = Executors.newCachedThreadPool()
+  val ec = ExecutionContext.fromExecutor(pull)
 
   def gui[T](f : => T) = new GuiCommand[T](f)
   def job[T](f : => T) = new JobCommand[T](f)
@@ -36,17 +42,17 @@ trait Command[T] extends Runnable{
 
 trait CommandGui[T] extends Command[T]{
   override def execute(t: Task[T, _], v:T){
-    import org.gfs.Command._
+    import org.gfs.gui.Command.implicits._
     t match {
       case g: GuiTask[T, _] => g.complete(v)
-      case j: JobTask[T, _] => Gfs.implicits.ec.execute(j.complete(v))
+      case j: JobTask[T, _] => Command.ec.execute(j.complete(v))
     }
   }
 }
 
 trait CommandJob[T] extends Command[T]{
   override def execute(t: Task[T, _], v:T){
-    import org.gfs.Command._
+    import org.gfs.gui.Command.implicits._
     t match {
       case g: GuiTask[T, _] => Command.ecGui.execute(g.complete(v))
       case j: JobTask[T, _] => j.complete(v)
@@ -56,7 +62,7 @@ trait CommandJob[T] extends Command[T]{
 
 abstract class BaseCommand[T](f: => T, ec:ExecutionContextExecutor) extends Command[T]{
   override def run() {
-    import org.gfs.Command._
+    import org.gfs.gui.Command.implicits._
     ec.execute(asRun{
       val v = f
       next.foreach(execute(_, v))
@@ -65,7 +71,7 @@ abstract class BaseCommand[T](f: => T, ec:ExecutionContextExecutor) extends Comm
 }
 
 class GuiCommand[T](f: => T) extends BaseCommand[T](f, Command.ecGui) with CommandGui[T]
-class JobCommand[T](f: => T) extends BaseCommand[T](f, Gfs.implicits.ec) with CommandJob[T]
+class JobCommand[T](f: => T) extends BaseCommand[T](f, Command.ec) with CommandJob[T]
 
 abstract class Task[A, B](c: Command[_], f: A => B) extends Command[B]{
   override def run(){ c.run() }

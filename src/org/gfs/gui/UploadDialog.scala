@@ -4,7 +4,6 @@ import java.awt.{BorderLayout, GridLayout}
 import java.io.FileInputStream
 import javax.swing._
 
-import org.gfs.Command
 import org.gfs.mongo.MongoFs
 
 object UploadDialog{
@@ -16,7 +15,7 @@ object UploadDialog{
 class UploadDialog(basePath:String, replace:Boolean = false) extends OkCancelDialog{
   assert(SwingUtilities.isEventDispatchThread)
 
-  import org.gfs.autoGui._
+  import org.gfs.gui.autoGui._
 
   val field = getContentPane += (new JPanel(new GridLayout(4, 1)), BorderLayout.NORTH)
   field.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5))

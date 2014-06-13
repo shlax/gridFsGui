@@ -3,7 +3,6 @@ package org.gfs.gui
 import java.awt.BorderLayout
 import javax.swing._
 
-import org.gfs.Command
 import org.gfs.mongo.{GfsFile, MongoFs}
 
 object Gui{
@@ -15,23 +14,31 @@ class Gui extends JFrame{
   assert(SwingUtilities.isEventDispatchThread)
   setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
 
-  import org.gfs.autoGui._
+  import org.gfs.gui.autoGui._
 
   val menu = new JMenuBar()
   setJMenuBar(menu)
 
-  val dbMn = menu += new JMenu("DB")
+  val dbMn = menu += new JMenu("File")
 
-  val reconnectMi = dbMn += new JMenuItem("reconnect").call(reconnect())
+  val reconnectMi = dbMn += new JMenuItem("Reconnect").call(reconnect())
+  val groovyMi = dbMn += new JMenuItem("Groovy").call( Command.job(new groovy.ui.Console().run()).run() )
 
   val bar = getContentPane += (new JToolBar(), BorderLayout.NORTH)
   bar.setFloatable(false)
 
-  val mainPane = getContentPane += new JPanel(new BorderLayout())
+  val mainSp = getContentPane += new JSplitPane(JSplitPane.VERTICAL_SPLIT)
+  mainSp.setOneTouchExpandable(true)
+  mainSp.setDividerLocation(35)
 
-  val sp = mainPane += new JSplitPane()
+  val queryTf = new JTextArea()
+  mainSp.setTopComponent(new JScrollPane(queryTf))
+
+  val sp = new JSplitPane()
   sp.setOneTouchExpandable(true)
   sp.setDividerLocation(200)
+
+  mainSp.setBottomComponent(sp)
 
   val left = new JPanel(new BorderLayout())
   sp.setLeftComponent(left)
@@ -49,13 +56,7 @@ class Gui extends JFrame{
   val uploadBt = bar += new JButton("upload").call(upload())
 
   val refreshBt = bar += new JButton("refresh").call(refresh())
-
-  val queryPane = mainPane += (new JPanel(new BorderLayout()), BorderLayout.NORTH)
-
-  val queryTf = queryPane += new JTextField()
-  queryTf.addActionListener(runAction())
-
-  val runBt = queryPane += (new JButton("run").call(runAction()), BorderLayout.EAST)
+  val runBt = bar += new JButton("run").call(runAction())
 
   setSize(800, 600)
   setLocationRelativeTo(null)
@@ -73,6 +74,7 @@ class Gui extends JFrame{
 
   def refresh(after: List[GfsFile] => Unit = { m => }) = {
     assert(SwingUtilities.isEventDispatchThread)
+    println("org.gfs.Api.refresh()")
 
     val fs = fsView.getSelectedItem.asInstanceOf[FsMode]
     val q = query

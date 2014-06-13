@@ -6,7 +6,6 @@ import java.text.SimpleDateFormat
 import javax.swing._
 import javax.swing.tree.{DefaultMutableTreeNode, DefaultTreeCellRenderer, DefaultTreeModel, TreePath}
 
-import org.gfs.Command
 import org.gfs.mongo.{GfsFile, MongoFs}
 
 import scala.collection.JavaConversions.enumerationAsScalaIterator
@@ -22,11 +21,11 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
   val menu = new JPopupMenu()
   setComponentPopupMenu(menu)
 
-  import org.gfs.autoGui._
+  import org.gfs.gui.autoGui._
 
-  val deleteMi = menu += new JMenuItem("delete").call(delete())
-  val downloadMi = menu += new JMenuItem("download").call(download())
-  val uploadMi = menu += new JMenuItem("upload").call(upload())
+  val deleteMi = menu += new JMenuItem("Delete").call(delete())
+  val downloadMi = menu += new JMenuItem("Download").call(download())
+  val uploadMi = menu += new JMenuItem("Upload").call(upload())
 
   implicit def toFs(a:Any) = a.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[FsFile]
 
