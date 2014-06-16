@@ -55,8 +55,7 @@ class Gui extends JFrame{
   val saveBt = bar += new JButton("save").call(tabbedPane.saveTab())
   val uploadBt = bar += new JButton("upload").call(upload())
 
-  val refreshBt = bar += new JButton("refresh").call(refresh())
-  val runBt = bar += new JButton("run").call(runAction())
+  val runBt = bar += new JButton("run").call(refresh())
 
   setSize(800, 600)
   setLocationRelativeTo(null)
@@ -70,13 +69,11 @@ class Gui extends JFrame{
     Command.job(FsViews.apply(l, fs)).toGui(Gui().tree.model).run()
   }
 
-  var query : String = ""
-
   def refresh(after: List[GfsFile] => Unit = { m => }) = {
     assert(SwingUtilities.isEventDispatchThread)
 
     val fs = fsView.getSelectedItem.asInstanceOf[FsMode]
-    val q = query
+    val q = queryTf.getText
 
     Command.job(FsViews.apply(MongoFs.list(q), fs)).toGui{ l =>
       tree.model(l)
@@ -103,8 +100,4 @@ class Gui extends JFrame{
     UploadDialog(tree.selectedPath().filter(_.file.isEmpty).map(_.path).mkString("/"))
   }
 
-  def runAction(){
-    query = queryTf.getText.trim
-    refresh()
-  }
 }
