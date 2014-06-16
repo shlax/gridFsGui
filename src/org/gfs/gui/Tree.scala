@@ -1,6 +1,6 @@
 package org.gfs.gui
 
-import java.awt.event.{MouseAdapter, MouseEvent}
+import java.awt.event._
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import javax.swing._
@@ -26,6 +26,14 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
   val deleteMi = menu += new JMenuItem("Delete").call(delete())
   val downloadMi = menu += new JMenuItem("Download").call(download())
   val uploadMi = menu += new JMenuItem("Upload").call(upload())
+
+  deleteMi.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0))
+
+  this.addKeyListener(new KeyAdapter(){
+    override def keyPressed(e: KeyEvent){
+      if(e.getKeyCode == KeyEvent.VK_DELETE) delete()
+    }
+  })
 
   implicit def toFs(a:Any) = a.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[FsFile]
 
@@ -86,7 +94,10 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
   def delete(){
     assert(SwingUtilities.isEventDispatchThread)
 
-    selectedFile().foreach(f => Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()).run())
+    selectedFile().foreach{f =>
+      val r = JOptionPane.showConfirmDialog(Gui(), f.name, "delete", JOptionPane.OK_CANCEL_OPTION)
+      if(r == JOptionPane.OK_OPTION) Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()).run()
+    }
   }
 
   def download(){

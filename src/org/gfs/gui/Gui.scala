@@ -73,7 +73,7 @@ class Gui extends JFrame{
     assert(SwingUtilities.isEventDispatchThread)
 
     val fs = fsView.getSelectedItem.asInstanceOf[FsMode]
-    val q = queryTf.getText
+    val q = queryTf.getText.trim()
 
     Command.job(FsViews.apply(MongoFs.list(q), fs)).toGui{ l =>
       tree.model(l)
