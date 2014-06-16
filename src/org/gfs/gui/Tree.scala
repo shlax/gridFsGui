@@ -95,8 +95,7 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
     assert(SwingUtilities.isEventDispatchThread)
 
     selectedFile().foreach{f =>
-      val r = JOptionPane.showConfirmDialog(Gui(), f.name, "delete", JOptionPane.OK_CANCEL_OPTION)
-      if(r == JOptionPane.OK_OPTION) Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()).run()
+      if(JOptionPane.showConfirmDialog(Gui(), f.name, "delete", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()).run()
     }
   }
 
