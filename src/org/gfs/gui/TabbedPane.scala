@@ -103,11 +103,15 @@ class TabbedPane extends JTabbedPane{
     if(replace == -1) {
       opened += Tab(f, ta)
       add(title, p)
+      setTabComponentAt(opened.size -1, new ClosableTab())
+
       setSelectedIndex(opened.length-1)
     }else{
       opened(replace) = Tab(f, ta)
       remove(replace)
       add(p, replace)
+      setTabComponentAt(replace, new ClosableTab())
+
       setTitleAt(replace, title)
       setSelectedIndex(replace)
     }
@@ -145,13 +149,30 @@ class TabbedPane extends JTabbedPane{
     }
   }
 
-  def closeTab(){
+  def closeTab(i:Int = -1){
     assert(SwingUtilities.isEventDispatchThread)
 
-    val ind = getSelectedIndex
+    val ind = if(i != -1) i else getSelectedIndex
     if(ind == -1) return
     opened.remove(ind)
     remove(ind)
+  }
+
+  class ClosableTab extends JPanel(new BorderLayout()){
+    setOpaque(false)
+    add(new JLabel(){
+      setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 2))
+      override def getText = {
+        val i = TabbedPane.this.indexOfTabComponent(ClosableTab.this)
+        if(i == -1) "" else TabbedPane.this.getTitleAt(i)
+      }
+    })
+    add(new JButton("X"){
+      setBorder(BorderFactory.createEmptyBorder(2,5,2,5))
+    }.call{
+      val i = TabbedPane.this.indexOfTabComponent(ClosableTab.this)
+      if(i != -1) closeTab(i)
+    }, BorderLayout.EAST)
   }
 
 }
