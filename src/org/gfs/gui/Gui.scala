@@ -29,7 +29,7 @@ class Gui extends JFrame{
 
   val mainSp = getContentPane += new JSplitPane(JSplitPane.VERTICAL_SPLIT)
   mainSp.setOneTouchExpandable(true)
-  mainSp.setDividerLocation(35)
+  mainSp.setDividerLocation(0)
 
   val queryTf = new JTextArea()
   mainSp.setTopComponent(new JScrollPane(queryTf))
