@@ -1,10 +1,10 @@
 package org.gfs.gui
 
-import java.awt.BorderLayout
+import java.awt.{Color, BorderLayout}
 import java.awt.event.{ActionEvent, InputEvent, KeyEvent}
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import javax.swing._
-import javax.swing.text.JTextComponent
+import javax.swing.text.{DefaultHighlighter, JTextComponent}
 import javax.swing.undo.UndoManager
 
 import org.gfs.mongo.{GfsFile, MongoFs}
@@ -34,6 +34,30 @@ class TabbedPane extends JTabbedPane{
     val ta = p.scroll(new JTextArea())
     ta.setTabSize(1)
 
+    val sTf = p += (new JTextField(), BorderLayout.NORTH)
+    sTf.setVisible(false)
+    sTf.addActionListener(unitAction{
+      val ha = ta.getHighlighter
+      ha.removeAllHighlights()
+      val t = sTf.getText
+
+      if(!t.isEmpty){
+        val hp = new DefaultHighlighter.DefaultHighlightPainter(Color.GRAY)
+        for(i <- t.r.findAllMatchIn(ta.getText))ha.addHighlight(i.start, i.end, hp)
+      }
+    })
+
+    val sm = JTextComponent.addKeymap("tabbedPaneSearch", sTf.getKeymap)
+    sm.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), new AbstractAction(){
+      override def actionPerformed(e: ActionEvent){
+        ta.getHighlighter.removeAllHighlights()
+        sTf.setVisible(false)
+        p.revalidate()
+        ta.requestFocus()
+      }
+    })
+    sTf.setKeymap(sm)
+
     val undo = new UndoManager()
     ta.getDocument.addUndoableEditListener(undo)
 
@@ -46,16 +70,25 @@ class TabbedPane extends JTabbedPane{
     val redoAct = new AbstractAction("Redo"){
       override def actionPerformed(e: ActionEvent){ if(undo.canRedo) undo.redo() }
     }
+    val findAct = new AbstractAction("Find"){
+      override def actionPerformed(e: ActionEvent){
+        sTf.setVisible(true)
+        p.revalidate()
+        sTf.requestFocus()
+      }
+    }
 
     val ctrlS = KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK)
     val ctrlZ = KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK)
     val ctrlY = KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK)
+    val ctrlF = KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK)
 
     val km = JTextComponent.addKeymap("tabbedPaneEditor", ta.getKeymap)
 
     km.addActionForKeyStroke(ctrlS, saveAct)
     km.addActionForKeyStroke(ctrlZ, undoAct)
     km.addActionForKeyStroke(ctrlY, redoAct)
+    km.addActionForKeyStroke(ctrlF, findAct)
 
     ta.setKeymap(km)
 
@@ -65,6 +98,7 @@ class TabbedPane extends JTabbedPane{
     (pop += new JMenuItem(saveAct)).setAccelerator(ctrlS)
     (pop += new JMenuItem(undoAct)).setAccelerator(ctrlZ)
     (pop += new JMenuItem(redoAct)).setAccelerator(ctrlY)
+    (pop += new JMenuItem(findAct)).setAccelerator(ctrlF)
 
     if(replace == -1) {
       opened += Tab(f, ta)
