@@ -10,6 +10,7 @@ import com.mongodb.{BasicDBObject, DBObject, MongoClient, WriteConcern}
 import org.gfs.mongo.auto._
 
 import scala.collection.JavaConversions.asScalaIterator
+import org.gfs.Api
 
 object ConnectionPull {
   val lock = new Object
@@ -67,6 +68,8 @@ object MongoFs {
     dt.autoClose {
       ConnectionPull.gridFs().createFile(_, nm).save()
     }
+
+    Api.event("add", nm)
   }
 
   def load(nm:String, dt: => OutputStream){
@@ -88,6 +91,8 @@ object MongoFs {
     assert(!SwingUtilities.isEventDispatchThread)
 
     ConnectionPull.gridFs().remove(nm)
+
+    Api.event("remove", nm)
   }
 
   def replace(nm:String, dt: => InputStream){
@@ -99,6 +104,8 @@ object MongoFs {
     dt.autoClose {
       fs.createFile(_, nm).save()
     }
+
+    Api.event("replace", nm)
   }
 
 }

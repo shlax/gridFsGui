@@ -145,7 +145,7 @@ class TabbedPane extends JTabbedPane{
       val nm = JOptionPane.showInputDialog("file name")
       if(nm == null || nm.isEmpty) return
       val in = new ByteArrayInputStream(t.cmp.getText.getBytes("UTF-8"))
-      Command.job(MongoFs.put(nm, in)).gui(Gui().refresh(_.find(_.name == nm).foreach(apply(_, ind)))).run()
+      Command.job(MongoFs.put(nm, in)).gui(Gui().refresh()).run()
     }
   }
 
