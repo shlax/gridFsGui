@@ -31,7 +31,7 @@ object Api {
 
   def event(e:Object*){
     val l = lock.synchronized{ handlers }
-    Command.job { for (c <- l if c.getMaximumNumberOfParameters >= e.size) c.call(e:_*) }.run()
+    if(l.nonEmpty) Command.job { for (c <- l if c.getMaximumNumberOfParameters >= e.size) c.call(e:_*) }.run()
   }
 
 }
