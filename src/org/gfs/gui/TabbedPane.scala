@@ -24,105 +24,116 @@ class TabbedPane extends JTabbedPane{
   case class Tab(file:GfsFile, cmp:JTextArea)
   val opened  = mutable.ListBuffer[Tab]()
 
-  def apply(f:GfsFile, replace:Int = -1){
+  def apply(f:GfsFile, replace:Int = -1) {
     assert(SwingUtilities.isEventDispatchThread)
 
-    val ind = f.name.lastIndexOf("/")
-    val title = if(ind == -1) f.name else f.name.substring(ind+1)
+    val ei = opened.find(_.file.name == f.name)
+    if (ei.isDefined) setSelectedIndex(opened.indexOf(ei.get))
+    else{
+      val ind = f.name.lastIndexOf("/")
+      val title = if (ind == -1) f.name else f.name.substring(ind + 1)
 
-    val p = new JPanel(new BorderLayout())
-    val ta = p.scroll(new JTextArea())
-    ta.setTabSize(1)
+      val p = new JPanel(new BorderLayout())
+      val ta = p.scroll(new JTextArea())
+      ta.setTabSize(1)
 
-    val sTf = p += (new JTextField(), BorderLayout.NORTH)
-    sTf.setVisible(false)
-    sTf.addActionListener(unitAction{
-      val ha = ta.getHighlighter
-      ha.removeAllHighlights()
-      val t = sTf.getText
+      val sTf = p +=(new JTextField(), BorderLayout.NORTH)
+      sTf.setVisible(false)
+      sTf.addActionListener(unitAction {
+        val ha = ta.getHighlighter
+        ha.removeAllHighlights()
+        val t = sTf.getText
 
-      if(!t.isEmpty){
-        val hp = new DefaultHighlighter.DefaultHighlightPainter(Color.GRAY)
-        for(i <- t.r.findAllMatchIn(ta.getText))ha.addHighlight(i.start, i.end, hp)
+        if (!t.isEmpty) {
+          val hp = new DefaultHighlighter.DefaultHighlightPainter(Color.GRAY)
+          for (i <- t.r.findAllMatchIn(ta.getText)) ha.addHighlight(i.start, i.end, hp)
+        }
+      })
+
+      val sm = JTextComponent.addKeymap("tabbedPaneSearch", sTf.getKeymap)
+      sm.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), new AbstractAction() {
+        override def actionPerformed(e: ActionEvent) {
+          ta.getHighlighter.removeAllHighlights()
+          sTf.setVisible(false)
+          p.revalidate()
+          ta.requestFocus()
+        }
+      })
+      sTf.setKeymap(sm)
+
+      val undo = new UndoManager()
+      ta.getDocument.addUndoableEditListener(undo)
+
+      val saveAct = new AbstractAction("Save") {
+        override def actionPerformed(e: ActionEvent) {
+          saveTab()
+        }
       }
-    })
-
-    val sm = JTextComponent.addKeymap("tabbedPaneSearch", sTf.getKeymap)
-    sm.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), new AbstractAction(){
-      override def actionPerformed(e: ActionEvent){
-        ta.getHighlighter.removeAllHighlights()
-        sTf.setVisible(false)
-        p.revalidate()
-        ta.requestFocus()
+      val undoAct = new AbstractAction("Undo") {
+        override def actionPerformed(e: ActionEvent) {
+          if (undo.canUndo) undo.undo()
+        }
       }
-    })
-    sTf.setKeymap(sm)
-
-    val undo = new UndoManager()
-    ta.getDocument.addUndoableEditListener(undo)
-
-    val saveAct = new AbstractAction("Save"){
-      override def actionPerformed(e: ActionEvent){ saveTab() }
-    }
-    val undoAct = new AbstractAction("Undo"){
-      override def actionPerformed(e: ActionEvent){ if(undo.canUndo) undo.undo() }
-    }
-    val redoAct = new AbstractAction("Redo"){
-      override def actionPerformed(e: ActionEvent){ if(undo.canRedo) undo.redo() }
-    }
-    val findAct = new AbstractAction("Find"){
-      override def actionPerformed(e: ActionEvent){
-        sTf.setVisible(true)
-        p.revalidate()
-        sTf.requestFocus()
+      val redoAct = new AbstractAction("Redo") {
+        override def actionPerformed(e: ActionEvent) {
+          if (undo.canRedo) undo.redo()
+        }
       }
+      val findAct = new AbstractAction("Find") {
+        override def actionPerformed(e: ActionEvent) {
+          sTf.setVisible(true)
+          p.revalidate()
+          sTf.requestFocus()
+        }
+      }
+
+      val ctrlS = KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK)
+      val ctrlZ = KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK)
+      val ctrlY = KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK)
+      val ctrlF = KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK)
+
+      val km = JTextComponent.addKeymap("tabbedPaneEditor", ta.getKeymap)
+
+      km.addActionForKeyStroke(ctrlS, saveAct)
+      km.addActionForKeyStroke(ctrlZ, undoAct)
+      km.addActionForKeyStroke(ctrlY, redoAct)
+      km.addActionForKeyStroke(ctrlF, findAct)
+
+      ta.setKeymap(km)
+
+      val pop = new JPopupMenu()
+      ta.setComponentPopupMenu(pop)
+
+      (pop += new JMenuItem(saveAct)).setAccelerator(ctrlS)
+      (pop += new JMenuItem(undoAct)).setAccelerator(ctrlZ)
+      (pop += new JMenuItem(redoAct)).setAccelerator(ctrlY)
+      (pop += new JMenuItem(findAct)).setAccelerator(ctrlF)
+
+      if (replace == -1) {
+        opened += Tab(f, ta)
+        add(title, p)
+        setTabComponentAt(opened.size - 1, new ClosableTab())
+
+        setSelectedIndex(opened.length - 1)
+      } else {
+        opened(replace) = Tab(f, ta)
+        remove(replace)
+        add(p, replace)
+        setTabComponentAt(replace, new ClosableTab())
+
+        setTitleAt(replace, title)
+        setSelectedIndex(replace)
+      }
+
+      if (f.exist()) Command.job {
+        val out = new ByteArrayOutputStream()
+        MongoFs.load(f.name, out)
+        out
+      }.toGui { out =>
+        ta.setText(new String(out.toByteArray, "UTF-8"))
+      }.run()
+
     }
-
-    val ctrlS = KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK)
-    val ctrlZ = KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK)
-    val ctrlY = KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK)
-    val ctrlF = KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK)
-
-    val km = JTextComponent.addKeymap("tabbedPaneEditor", ta.getKeymap)
-
-    km.addActionForKeyStroke(ctrlS, saveAct)
-    km.addActionForKeyStroke(ctrlZ, undoAct)
-    km.addActionForKeyStroke(ctrlY, redoAct)
-    km.addActionForKeyStroke(ctrlF, findAct)
-
-    ta.setKeymap(km)
-
-    val pop = new JPopupMenu()
-    ta.setComponentPopupMenu(pop)
-
-    (pop += new JMenuItem(saveAct)).setAccelerator(ctrlS)
-    (pop += new JMenuItem(undoAct)).setAccelerator(ctrlZ)
-    (pop += new JMenuItem(redoAct)).setAccelerator(ctrlY)
-    (pop += new JMenuItem(findAct)).setAccelerator(ctrlF)
-
-    if(replace == -1) {
-      opened += Tab(f, ta)
-      add(title, p)
-      setTabComponentAt(opened.size -1, new ClosableTab())
-
-      setSelectedIndex(opened.length-1)
-    }else{
-      opened(replace) = Tab(f, ta)
-      remove(replace)
-      add(p, replace)
-      setTabComponentAt(replace, new ClosableTab())
-
-      setTitleAt(replace, title)
-      setSelectedIndex(replace)
-    }
-
-    if(f.exist()) Command.job{
-      val out = new ByteArrayOutputStream()
-      MongoFs.load(f.name, out)
-      out
-    }.toGui{ out =>
-      ta.setText(new String(out.toByteArray, "UTF-8"))
-    }.run()
   }
 
   def newTab(){
