@@ -7,12 +7,12 @@ import javax.swing._
 import org.gfs.mongo.MongoFs
 
 object UploadDialog{
-  def apply(basePath:String, replace:Boolean = false){
-    new UploadDialog(basePath, replace).open()
+  def apply(dbFs: MongoFs,basePath:String, replace:Boolean = false){
+    new UploadDialog(dbFs, basePath, replace).open()
   }
 }
 
-class UploadDialog(basePath:String, replace:Boolean = false) extends OkCancelDialog{
+class UploadDialog(dbFs: MongoFs, basePath:String, replace:Boolean = false) extends OkCancelDialog{
   assert(SwingUtilities.isEventDispatchThread)
 
   import org.gfs.gui.autoGui._
@@ -39,8 +39,8 @@ class UploadDialog(basePath:String, replace:Boolean = false) extends OkCancelDia
     val to = tfPath.getText
 
     Command.job{
-      if(replace) MongoFs.delete(to)
-      MongoFs.put(to, new FileInputStream(from))
+      if(replace) dbFs.delete(to)
+      dbFs.put(to, new FileInputStream(from))
     }.gui(Gui().refresh()).run()
   }
 

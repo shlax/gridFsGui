@@ -6,12 +6,12 @@ import java.text.SimpleDateFormat
 import javax.swing._
 import javax.swing.tree.{DefaultMutableTreeNode, DefaultTreeCellRenderer, DefaultTreeModel, TreePath}
 
-import org.gfs.mongo.{GfsFile, MongoFs}
+import org.gfs.mongo.GfsFile
 
 import scala.collection.JavaConversions.enumerationAsScalaIterator
 import scala.language.implicitConversions
 
-class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
+class Tree(fsGui:FsGui) extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
   assert(SwingUtilities.isEventDispatchThread)
 
   setRootVisible(false)
@@ -95,7 +95,7 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
     assert(SwingUtilities.isEventDispatchThread)
 
     selectedFile().foreach{f =>
-      if(JOptionPane.showConfirmDialog(Gui(), f.name, "delete", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) Command.job(MongoFs.delete(f.name)).gui(Gui().refresh()).run()
+      if(JOptionPane.showConfirmDialog(Gui(), f.name, "delete", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) Command.job(fsGui.dbFs.delete(f.name)).gui(Gui().refresh()).run()
     }
   }
 
@@ -106,7 +106,7 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
       val fch = new JFileChooser()
       if (fch.showSaveDialog(Gui()) == JFileChooser.APPROVE_OPTION) {
         val sf = fch.getSelectedFile
-        Command.job(MongoFs.load(f.name, new FileOutputStream(sf))).run()
+        Command.job(fsGui.dbFs.load(f.name, new FileOutputStream(sf))).run()
       }
     }
   }
@@ -114,12 +114,12 @@ class Tree extends JTree(new DefaultTreeModel(new DefaultMutableTreeNode())){
   def upload(){
     assert(SwingUtilities.isEventDispatchThread)
 
-    selectedFile().foreach(f => UploadDialog(f.name, true))
+    selectedFile().foreach(f => UploadDialog(fsGui.dbFs, f.name, true))
   }
 
   addMouseListener(new MouseAdapter{
     override def mouseClicked(e: MouseEvent){
-      if(e.getClickCount == 2) Gui().openFile()
+      if(e.getClickCount == 2) fsGui.openFile()
     }
   })
 

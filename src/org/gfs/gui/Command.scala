@@ -34,6 +34,9 @@ trait Command[T] extends Runnable{
   def toGui[V](nf : T => V) = map(new GuiTask(this, nf))
   def toJob[V](nf : T => V) = map(new JobTask(this, nf))
 
+  def inGui[V](nf : => V) = map(new GuiTask(this, {_ => nf}))
+  def inJob[V](nf : => V) = map(new JobTask(this, {_ => nf}))
+
   def gui[V](nf : => V): Task[T, V] = toGui{a => nf}
   def job[V](nf : => V): Task[T, V] = toJob{a => nf}
 

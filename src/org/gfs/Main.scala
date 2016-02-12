@@ -3,7 +3,7 @@ package org.gfs
 import java.awt.event.{WindowAdapter, WindowEvent}
 import javax.swing.{SwingUtilities, UIManager}
 
-import org.gfs.gui.{Command, ConnectDialog, Gui}
+import org.gfs.gui.{Command, DbConnectDialog, Gui}
 import org.gfs.mongo.ConnectionPull
 
 // -Xdisable-assertions
@@ -20,6 +20,6 @@ object Main extends App with Runnable{
       }
     })
     f.setVisible(true)
-    ConnectDialog()
+    DbConnectDialog()
   }
 }

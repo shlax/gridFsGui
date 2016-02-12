@@ -7,19 +7,13 @@ import javax.swing._
 import javax.swing.text.{DefaultHighlighter, JTextComponent}
 import javax.swing.undo.UndoManager
 
-import org.gfs.mongo.{GfsFile, MongoFs}
+import org.gfs.mongo.GfsFile
 
 import scala.collection.mutable
 
-class TabbedPane extends JTabbedPane{
-  assert(SwingUtilities.isEventDispatchThread)
-
-  val menu = new JPopupMenu()
-  setComponentPopupMenu(menu)
+class TabbedPane(fsGui:FsGui) extends ClosablePane{
 
   import org.gfs.gui.autoGui._
-
-  val closeItm = menu += new JMenuItem("close").call(closeTab())
 
   case class Tab(file:GfsFile, cmp:JTextArea)
   val opened  = mutable.ListBuffer[Tab]()
@@ -127,7 +121,7 @@ class TabbedPane extends JTabbedPane{
 
       if (f.exist()) Command.job {
         val out = new ByteArrayOutputStream()
-        MongoFs.load(f.name, out)
+        fsGui.dbFs.load(f.name, out)
         out
       }.toGui { out =>
         ta.setText(new String(out.toByteArray, "UTF-8"))
@@ -151,39 +145,19 @@ class TabbedPane extends JTabbedPane{
     if(t.file.exist()){
       val nm = t.file.name
       val in = new ByteArrayInputStream(t.cmp.getText.getBytes("UTF-8"))
-      Command.job(MongoFs.replace(nm, in)).run()
+      Command.job(fsGui.dbFs.replace(nm, in)).run()
     } else{
       val nm = JOptionPane.showInputDialog("file name")
       if(nm == null || nm.isEmpty) return
       val in = new ByteArrayInputStream(t.cmp.getText.getBytes("UTF-8"))
-      Command.job(MongoFs.put(nm, in)).gui(Gui().refresh(_.find(_.name == nm).foreach(apply(_, ind)))).run()
+      Command.job(fsGui.dbFs.put(nm, in)).gui(fsGui.refresh(_.find(_.name == nm).foreach(apply(_, ind)))).run()
     }
   }
 
-  def closeTab(i:Int = -1){
+  override def removeTab(i:Int){
     assert(SwingUtilities.isEventDispatchThread)
 
-    val ind = if(i != -1) i else getSelectedIndex
-    if(ind == -1) return
-    opened.remove(ind)
-    remove(ind)
-  }
-
-  class ClosableTab extends JPanel(new BorderLayout()){
-    setOpaque(false)
-    add(new JLabel(){
-      setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 2))
-      override def getText = {
-        val i = TabbedPane.this.indexOfTabComponent(ClosableTab.this)
-        if(i == -1) "" else TabbedPane.this.getTitleAt(i)
-      }
-    })
-    add(new JButton("X"){
-      setBorder(BorderFactory.createEmptyBorder(2,5,2,5))
-    }.call{
-      val i = TabbedPane.this.indexOfTabComponent(ClosableTab.this)
-      if(i != -1) closeTab(i)
-    }, BorderLayout.EAST)
+    opened.remove(i)
   }
 
 }

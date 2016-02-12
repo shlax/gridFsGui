@@ -1,9 +1,10 @@
 package org.gfs.gui
 
-import java.awt.BorderLayout
+import java.awt.event.{KeyEvent, KeyAdapter, MouseEvent, MouseAdapter}
 import javax.swing._
 
-import org.gfs.mongo.{GfsFile, MongoFs}
+import com.mongodb.BasicDBObject
+import org.gfs.mongo.ConnectionPull
 
 object Gui{
   lazy val gui = new Gui()
@@ -24,80 +25,59 @@ class Gui extends JFrame{
   val reconnectMi = dbMn += new JMenuItem("Reconnect").call(reconnect())
   val groovyMi = dbMn += new JMenuItem("Groovy").call( Command.job(new groovy.ui.Console().run()).run() )
 
-  val bar = getContentPane += (new JToolBar(), BorderLayout.NORTH)
-  bar.setFloatable(false)
-
-  val mainSp = getContentPane += new JSplitPane(JSplitPane.VERTICAL_SPLIT)
+  val mainSp = this += new JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
+  mainSp.setDividerLocation(150)
   mainSp.setOneTouchExpandable(true)
-  mainSp.setDividerLocation(0)
 
-  val queryTf = new JTextArea()
-  mainSp.setTopComponent(new JScrollPane(queryTf))
+  val colsNm = mainSp.scroll(new JList[String]())
 
-  val sp = new JSplitPane()
-  sp.setOneTouchExpandable(true)
-  sp.setDividerLocation(200)
+  colsNm.addMouseListener(new MouseAdapter {
+    override def mouseClicked(e: MouseEvent){
+      if(e.getClickCount == 2) listOpen()
+    }
+  })
 
-  mainSp.setBottomComponent(sp)
+  colsNm.addKeyListener(new KeyAdapter {
+    override def keyPressed(e: KeyEvent){
+      if(e.getKeyCode == KeyEvent.VK_ENTER) listOpen()
+    }
+  })
 
-  val left = new JPanel(new BorderLayout())
-  sp.setLeftComponent(left)
+  val qPane = mainSp += new QueryPane
 
-  val fsView = left += (new JComboBox(FsMode.modes), BorderLayout.NORTH)
-  fsView.addActionListener(reload())
+  def listOpen(){
+    val nm = colsNm.getSelectedValue
+    if(nm != null && nm.nonEmpty){
+      if(nm.endsWith(".files")) qPane.addFs(nm.substring(0, nm.length - 6))
+      else qPane.add(nm)
+    }
+  }
 
-  val tree = left.scroll(new Tree())
+  val colPop = new JPopupMenu()
+  colsNm.setComponentPopupMenu(colPop)
 
-  val tabbedPane = new TabbedPane()
-  sp.setRightComponent(tabbedPane)
-
-  val newBt = bar += new JButton("new").call(tabbedPane.newTab())
-  val saveBt = bar += new JButton("save").call(tabbedPane.saveTab())
-  val uploadBt = bar += new JButton("upload").call(upload())
-
-  val runBt = bar += new JButton("run").call(refresh())
+  colPop += new JMenuItem("New collection").call{
+    val nm = JOptionPane.showInputDialog("Name")
+    if(nm != null && nm.nonEmpty) Command.job{
+      val c = ConnectionPull().createCollection(nm, null)
+      val o = new BasicDBObject()
+      c.insert(o); c.remove(o) //crap
+    }.inGui(refresh()).run()
+  }
 
   setSize(800, 600)
   setLocationRelativeTo(null)
 
-  def reload(){
-    assert(SwingUtilities.isEventDispatchThread)
-
-    val fs = fsView.getSelectedItem.asInstanceOf[FsMode]
-    val l = tree.files
-
-    Command.job(FsViews.apply(l, fs)).toGui(Gui().tree.model).run()
-  }
-
-  def refresh(after: List[GfsFile] => Unit = { m => }) = {
-    assert(SwingUtilities.isEventDispatchThread)
-
-    val fs = fsView.getSelectedItem.asInstanceOf[FsMode]
-    val q = queryTf.getText.trim()
-
-    Command.job(FsViews.apply(MongoFs.list(q), fs)).toGui{ l =>
-      tree.model(l)
-      after(l._1)
-    }.run()
-    this
-  }
-
-  def openFile(){
-    assert(SwingUtilities.isEventDispatchThread)
-
-    tree.selectedFile().foreach(Gui().tabbedPane(_))
-  }
-
   def reconnect(){
     assert(SwingUtilities.isEventDispatchThread)
 
-    ConnectDialog()
+    DbConnectDialog()
   }
 
-  def upload(){
+  def refresh(){
     assert(SwingUtilities.isEventDispatchThread)
 
-    UploadDialog(tree.selectedPath().filter(_.file.isEmpty).map(_.path).mkString("/"))
+    import scala.collection.JavaConversions._
+    Command.job(ConnectionPull.colsNm().toList).toGui(i => colsNm.setListData(i.toArray)).run()
   }
-
 }

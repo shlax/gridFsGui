@@ -14,7 +14,7 @@ object Api {
 
   def mongoClient() = ConnectionPull()
 
-  def gridFs() = ConnectionPull.gridFs()
+  def gridFs(nm:String) = ConnectionPull.gridFs(if(nm == null || nm.isEmpty) None else Some(nm) )
 
   val lock = new Object
   var handlers:List[Closure[_]] = Nil

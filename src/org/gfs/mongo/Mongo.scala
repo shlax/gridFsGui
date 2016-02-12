@@ -17,23 +17,39 @@ object ConnectionPull {
   var pull : Option[MongoClient] = None
 
   var dbNm : Option[String] = None
-  var dbBucket : Option[String] = None
+  //var dbBucket : Option[String] = None
 
-  def apply() = lock.synchronized{ pull.get }
+  def pool() = {
+    assert(!SwingUtilities.isEventDispatchThread)
 
-  def connect(host:String, port:Int, db:String, bucket:String) {
+    lock.synchronized{ pull.get }
+  }
+
+  def apply() ={
+    assert(!SwingUtilities.isEventDispatchThread)
+
+    pool().getDB(dbNm.get)
+  }
+
+  def connect(host:String, port:Int, db:String) {
+    assert(!SwingUtilities.isEventDispatchThread)
+
     lock.synchronized {
       pull = Some(new MongoClient(host, port))
       dbNm = if(db.isEmpty) None else Some(db)
-      dbBucket = if(bucket.isEmpty) None else Some(bucket)
+      //dbBucket = if(bucket.isEmpty) None else Some(bucket)
     }
   }
 
-  def gridFs() = lock.synchronized {
-    val db = pull.get.getDB(dbNm.get)
+  def gridFs(dbBucket: Option[String] /*= None*/) = lock.synchronized {
+    assert(!SwingUtilities.isEventDispatchThread)
+
+    val db = apply()
     db.setWriteConcern(WriteConcern.REPLICAS_SAFE)
     if (dbBucket.isEmpty) new GridFS(db) else new GridFS(db, dbBucket.get)
   }
+
+  def colsNm() = apply().getCollectionNames
 
   def close(){
     lock.synchronized {
@@ -52,12 +68,12 @@ case class GfsFile(name:String, length:Long, uploadDate:Date){
   def exist() = length != -1
 }
 
-object MongoFs {
+class MongoFs(fs:GridFS) {
 
   def list(qs:String) = {
     assert(!SwingUtilities.isEventDispatchThread)
 
-    ConnectionPull.gridFs().getFileList(if(qs.isEmpty) new BasicDBObject() else JSON.parse(qs).asInstanceOf[DBObject]).toList.map{ f =>
+    fs.getFileList(if(qs.isEmpty) new BasicDBObject() else JSON.parse(qs).asInstanceOf[DBObject]).toList.map{ f =>
       GfsFile(f.get("filename").asInstanceOf[String], f.get("length").asInstanceOf[Long], f.get("uploadDate").asInstanceOf[Date])
     }
   }
@@ -65,9 +81,7 @@ object MongoFs {
   def put(nm:String, dt: => InputStream){
     assert(!SwingUtilities.isEventDispatchThread)
 
-    dt.autoClose {
-      ConnectionPull.gridFs().createFile(_, nm).save()
-    }
+    dt.autoClose { fs.createFile(_, nm).save() }
 
     Api.event("add", nm)
   }
@@ -75,7 +89,7 @@ object MongoFs {
   def load(nm:String, dt: => OutputStream){
     assert(!SwingUtilities.isEventDispatchThread)
 
-    val f = ConnectionPull.gridFs().findOne(nm)
+    val f = fs.findOne(nm)
     if(f == null) throw new RuntimeException("not found "+f)
     f.getInputStream.autoClose{ in => dt.autoClose{ out =>
       val buffer = new Array[Byte](1024)
@@ -90,7 +104,7 @@ object MongoFs {
   def delete(nm:String){
     assert(!SwingUtilities.isEventDispatchThread)
 
-    ConnectionPull.gridFs().remove(nm)
+    fs.remove(nm)
 
     Api.event("remove", nm)
   }
@@ -98,12 +112,8 @@ object MongoFs {
   def replace(nm:String, dt: => InputStream){
     assert(!SwingUtilities.isEventDispatchThread)
 
-    val fs = ConnectionPull.gridFs()
     fs.remove(nm)
-
-    dt.autoClose {
-      fs.createFile(_, nm).save()
-    }
+    dt.autoClose { fs.createFile(_, nm).save() }
 
     Api.event("replace", nm)
   }
