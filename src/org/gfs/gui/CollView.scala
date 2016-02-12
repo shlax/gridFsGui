@@ -36,6 +36,12 @@ class CollView(nm:String) extends JPanel with TreeWillExpandListener {
   tree.setRootVisible(false)
   tree.addTreeWillExpandListener(this)
 
+  val pop = new JPopupMenu
+  tree.setComponentPopupMenu(pop)
+
+  pop += new JMenuItem("Open").call(open())
+  pop += new JMenuItem("Delete").call(delete())
+
   tree.addMouseListener(new MouseAdapter {
     override def mouseClicked(e: MouseEvent){
       if(e.getClickCount == 2) open()
@@ -69,9 +75,18 @@ class CollView(nm:String) extends JPanel with TreeWillExpandListener {
     }.run()
   }
 
+  def selected = {
+    val p = tree.getSelectionPath
+    if(p != null && p.getPath.length == 2) Some(p.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[Nod].v.asInstanceOf[DBObject]) else None
+  }
+
+  def delete(){
+    selected.foreach(s => Command.job( coll().remove(new BasicDBObject("_id", s.get("_id")) )).run() )
+  }
+
   def open(){
     val p = tree.getSelectionPath
-    if(p != null && p.getPath.length == 2) new JsonDialog(nm, Some(p.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[Nod].v.asInstanceOf[DBObject])).setVisible(true)
+    if(p != null && p.getPath.length == 2) new JsonDialog(nm, selected).setVisible(true)
   }
 
   def add(){
