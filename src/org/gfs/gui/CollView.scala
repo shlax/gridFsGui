@@ -85,8 +85,7 @@ class CollView(nm:String) extends JPanel with TreeWillExpandListener {
   }
 
   def open(){
-    val p = tree.getSelectionPath
-    if(p != null && p.getPath.length == 2) new JsonDialog(nm, selected).setVisible(true)
+    selected.foreach(s =>  new JsonDialog(nm, s).setVisible(true) )
   }
 
   def add(){
